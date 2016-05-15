@@ -16,44 +16,28 @@ if len(sys.argv) == 1:
     exit(0)
 collection = sys.argv[1]
 
-# read and parse input data - extract words, identifiers and titles
-f = open(collection, "r")
-identifier = ''
-document = ''
-title = ''
-indoc = False
-intitle = False
+if not os.path.isdir(collection):
+    print('<collection> must be a folder')
+    exit(0)
+
+documents = list(filter(lambda x: 'document.' in x, os.listdir(collection)))
+
 data = {}
 titles = {}
-for line in f:
-    mo = re.match(r'\.I ([0-9]+)', line)
-    if mo:
-        if document != '':
-            data[identifier] = document
-        identifier = mo.group(1)
-        indoc = False
-    else:
-        mo = re.match(r'\.T', line)
-        if mo:
-            title = ''
-            intitle = True
-        else:
-            mo = re.match(r'\.W', line)
-            if mo:
-                document = ''
-                indoc = True
-            else:
-                if intitle:
-                    intitle = False
-                    if identifier != '':
-                        titles[identifier] = line[:-1][:50]
-                elif indoc:
-                    document += " "
-                    if parameters.case_folding:
-                        document += line.lower()
-                    else:
-                        document += line
-f.close()
+
+for document in documents:
+    path_to_doc = os.path.join(collection, document)
+    identifier = document.split('.')[1]
+    titles[identifier] = document
+
+    with open(path_to_doc, 'r') as doc_file:
+        content = ' '.join(doc_file.readlines())
+
+    data[identifier] = content.lower() if parameters.case_folding else content
+
+
+if collection.endswith('/'):
+    collection = collection[:-1]
 
 # document length/title file
 g = open(collection + "_index_len", "w")
