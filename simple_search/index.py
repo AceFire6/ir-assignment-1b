@@ -5,6 +5,7 @@
 import os
 import re
 import sys
+import math
 
 import porter
 
@@ -22,7 +23,7 @@ if not os.path.isdir(collection):
 
 documents = list(filter(lambda x: 'document.' in x, os.listdir(collection)))
 
-data = {}
+doc_data = {}
 titles = {}
 
 for document in documents:
@@ -33,7 +34,8 @@ for document in documents:
     with open(path_to_doc, 'r') as doc_file:
         content = ' '.join(doc_file.readlines())
 
-    data[identifier] = content.lower() if parameters.case_folding else content
+    doc_data[identifier] = (content.lower()
+                            if parameters.case_folding else content)
 
 
 if collection.endswith('/'):
@@ -44,10 +46,10 @@ g = open(collection + "_index_len", "w")
 
 # create inverted files in memory and save titles/N to file
 index = {}
-N = len(data.keys())
+N = len(doc_data.keys())
 p = porter.PorterStemmer()
-for key in data:
-    content = re.sub(r'[^ a-zA-Z0-9]', ' ', data[key])
+for key in doc_data:
+    content = re.sub(r'[^ a-zA-Z0-9]', ' ', doc_data[key])
     content = re.sub(r'\s+', ' ', content)
     words = content.split(' ')
     doc_length = 0
@@ -63,7 +65,19 @@ for key in data:
                     index[word][key] = 1
                 else:
                     index[word][key] += 1
-    print(key, doc_length, titles[key], sep=':', file=g)
+
+    word_tf_idf = {}
+    words = list(
+            filter(lambda x: x.lower() not in parameters.stop_words, index))
+    for word_key in words:
+        if key in index[word_key]:
+            word_tf_idf[word_key] = index[word_key][key] * math.log(1 + (200 / len(index[word_key])))
+
+    top_word_list = ','.join(sorted(word_tf_idf,
+                                    key=word_tf_idf.__getitem__,
+                                    reverse=True)[:parameters.max_results])
+
+    print(key, doc_length, titles[key], top_word_list, sep=':', file=g)
 
 # document length/title file
 g.close()
