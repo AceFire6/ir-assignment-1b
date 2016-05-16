@@ -8,7 +8,9 @@ case_folding = True
 log_tf = True
 use_idf = True
 log_idf = True
-max_results = 10
+blind_relevance_feedback = True
+total_results = 10
+top_term_count = 4
 
 stop_words = ['a', 'about', 'abov', 'after', 'again', 'against', 'all', 'am',
               'an', 'and', 'ani', 'ar', "aren't", 'as', 'at', 'be', 'becaus',

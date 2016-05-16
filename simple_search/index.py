@@ -67,15 +67,14 @@ for key in doc_data:
                     index[word][key] += 1
 
     word_tf_idf = {}
-    words = list(
-            filter(lambda x: x.lower() not in parameters.stop_words, index))
+    words = list(filter(lambda x: x.lower() not in parameters.stop_words, index))
     for word_key in words:
         if key in index[word_key]:
-            word_tf_idf[word_key] = index[word_key][key] * math.log(1 + (200 / len(index[word_key])))
+            word_tf_idf[word_key] = index[word_key][key] * math.log(200 / len(index[word_key]))
 
     top_word_list = ','.join(sorted(word_tf_idf,
                                     key=word_tf_idf.__getitem__,
-                                    reverse=True)[:parameters.max_results])
+                                    reverse=True)[:parameters.top_term_count])
 
     print(key, doc_length, titles[key], top_word_list, sep=':', file=g)
 
