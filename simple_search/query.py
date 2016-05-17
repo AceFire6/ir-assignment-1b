@@ -74,24 +74,24 @@ def do_query(query_words):
 
 
 # check parameter for collection name
-if len(sys.argv)<3:
-   print ("Syntax: index.py <collection> <query>")
-   exit(0)
- 
+if len(sys.argv) < 3:
+    print("Syntax: index.py <collection> <query>")
+    exit(0)
+
 # construct collection and query
 collection = sys.argv[1]
 query = ''
 arg_index = 2
 while arg_index < len(sys.argv):
-   query += sys.argv[arg_index] + ' '
-   arg_index += 1
+    query += sys.argv[arg_index] + ' '
+    arg_index += 1
 
 # clean query
 if parameters.case_folding:
-   query = query.lower ()
-query = re.sub (r'[^ a-zA-Z0-9]', ' ', query)
-query = re.sub (r'\s+', ' ', query)
-query_words = query.split (' ')
+    query = query.lower()
+query = re.sub(r'[^ a-zA-Z0-9]', ' ', query)
+query = re.sub(r'\s+', ' ', query)
+query_words = query.split(' ')
 
 accum, titles, top_words = do_query(query_words)
 
@@ -116,5 +116,6 @@ if parameters.blind_relevance_feedback:
     results = sorted(accum, key=accum.__getitem__, reverse=True)
 
 # print top results
-for i in range (min (len (results), parameters.num_results)):
-   print ("{0:10.8f} {1:5} {2}".format (accum[results[i]], results[i], titles[results[i]]))
+for i in range(min(len(results), parameters.num_results)):
+    print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
+                                       titles[results[i]]))
