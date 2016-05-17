@@ -98,7 +98,7 @@ accum, titles, top_words = do_query(query_words)
 results = sorted(accum, key=accum.__getitem__, reverse=True)
 
 # Does the blind relevance feedback
-# Takes the top 10 results and gets the top N highest rated terms from each
+# Takes the top N results and gets the top N highest rated terms from each
 # Expands the query to include these new terms and searches again
 if parameters.blind_relevance_feedback:
     num_docs = min(len(results), parameters.top_doc_count)
@@ -106,11 +106,12 @@ if parameters.blind_relevance_feedback:
 
     documents = [titles[results[i]] for i in range(num_docs)]
 
+    word_set = set(query_words)
     # Get top terms from each document and add them to a new query
     for document in documents:
-        query_words.extend(top_words.get(document, []))
+        word_set.update(top_words.get(document, []))
 
-    accum, titles, top_words = do_query(query_words)
+    accum, titles, top_words = do_query(list(word_set))
 
     results = sorted(accum, key=accum.__getitem__, reverse=True)
 
