@@ -2,6 +2,13 @@
 # Hussein Suleman
 # 21 April 2016
 
+debug = True
+
+
+def print_debug(msg):
+    if debug:
+        print(msg)
+
 normalization = True
 stemming = True
 case_folding = True
@@ -9,8 +16,9 @@ log_tf = True
 use_idf = True
 log_idf = True
 blind_relevance_feedback = True
-total_results = 10
-top_term_count = 4
+num_results = 10
+top_doc_count = 5
+top_term_count = 5
 
 stop_words = ['a', 'about', 'abov', 'after', 'again', 'against', 'all', 'am',
               'an', 'and', 'ani', 'ar', "aren't", 'as', 'at', 'be', 'becaus',
