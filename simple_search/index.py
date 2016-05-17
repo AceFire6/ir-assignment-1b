@@ -12,14 +12,14 @@ import porter
 import parameters
 
 
-def index_collection(collection):
-    documents = list(filter(lambda x: 'document.' in x, os.listdir(collection)))
+def index_collection(collection_dir):
+    documents = list(filter(lambda x: 'document.' in x, os.listdir(collection_dir)))
 
     doc_data = {}
     titles = {}
 
     for document in documents:
-        path_to_doc = os.path.join(collection, document)
+        path_to_doc = os.path.join(collection_dir, document)
         identifier = document.split('.')[1]
         titles[identifier] = document
 
@@ -29,12 +29,11 @@ def index_collection(collection):
         doc_data[identifier] = (content.lower()
                                 if parameters.case_folding else content)
 
-
-    if collection.endswith('/'):
-        collection = collection[:-1]
+    if collection_dir.endswith(os.path.sep):
+        collection_dir = collection_dir[:-1]
 
     # document length/title file
-    g = open(collection + "_index_len", "w")
+    g = open("%s_index_len" % collection_dir, "w")
 
     # create inverted files in memory and save titles/N to file
     index = {}
@@ -74,18 +73,19 @@ def index_collection(collection):
     g.close()
 
     # write inverted index to files
+    inverted_file_dir = "%s_index" % collection_dir
     try:
-        os.mkdir(collection + "_index")
+        os.mkdir(inverted_file_dir)
     except:
-        pass
+        print('Failed to make %s_index directory' % collection_dir)
     for key in index:
-        f = open(os.path.join(collection + "_index", key), "w")
+        f = open(os.path.join(inverted_file_dir, key), "w")
         for entry in index[key]:
             print(entry, index[key][entry], sep=':', file=f)
         f.close()
 
     # write N
-    f = open(collection + "_index_N", "w")
+    f = open("%s_index_N" % collection_dir, "w")
     print(N, file=f)
     f.close()
 
