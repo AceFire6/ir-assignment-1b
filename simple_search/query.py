@@ -102,10 +102,10 @@ results = sorted(accum, key=accum.__getitem__, reverse=True)
 # Takes the top 10 results and gets the top N highest rated terms from each
 # Expands the query to include these new terms and searches again
 if parameters.blind_relevance_feedback:
-    num_results = min(len(results), parameters.total_results)
-    results = results[:num_results]
+    num_docs = min(len(results), parameters.top_doc_count)
+    results = results[:num_docs]
 
-    documents = [titles[results[i]] for i in range(num_results)]
+    documents = [titles[results[i]] for i in range(num_docs)]
 
     # Get top terms from each document and add them to a new query
     for document in documents:
@@ -116,5 +116,5 @@ if parameters.blind_relevance_feedback:
     results = sorted(accum, key=accum.__getitem__, reverse=True)
 
 # print top results
-for i in range (min (len (results), parameters.total_results)):
+for i in range (min (len (results), parameters.num_results)):
    print ("{0:10.8f} {1:5} {2}".format (accum[results[i]], results[i], titles[results[i]]))
