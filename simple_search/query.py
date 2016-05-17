@@ -10,6 +10,7 @@ import os
 import porter
 
 import parameters
+from parameters import stop_words
 
 
 def do_query(query_words):
@@ -91,7 +92,9 @@ if parameters.case_folding:
     query = query.lower()
 query = re.sub(r'[^ a-zA-Z0-9]', ' ', query)
 query = re.sub(r'\s+', ' ', query)
-query_words = query.split(' ')
+query = query.strip()
+# filter out stop words from the user's query
+query_words = list(filter(lambda x: x not in stop_words, query.split(' ')))
 
 accum, titles, top_words = do_query(query_words)
 
