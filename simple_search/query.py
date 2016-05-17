@@ -13,31 +13,32 @@ import parameters
 from parameters import stop_words
 
 
-def do_query(query_words):
+def do_query(collection_dir, terms):
     # create accumulators and other data structures
-    accum = {}
+    tf_idf_accum = {}
     filenames = []
     p = porter.PorterStemmer()
 
     # get N
-    f = open(collection + "_index_N", "r")
+    f = open("%s_index_N" % collection_dir, "r")
     N = eval(f.read())
     f.close()
 
     # get document lengths/titles
     titles = {}
-    f = open(collection + "_index_len", "r")
+    f = open("%s_index_len" % collection_dir, "r")
     lengths = f.readlines()
     f.close()
 
     # get index for each term and calculate similarities using accumulators
-    for term in query_words:
+    for term in terms:
         if term != '':
             if parameters.stemming:
                 term = p.stem(term, 0, len(term) - 1)
-            if not os.path.isfile(collection + "_index/" + term):
+            term_path = "%s_index/%s" % (collection_dir, term)
+            if not os.path.isfile(term_path):
                 continue
-            f = open(collection + "_index/" + term, "r")
+            f = open(term_path, "r")
             lines = f.readlines()
             idf = 1
             if parameters.use_idf:
@@ -50,11 +51,11 @@ def do_query(query_words):
                 if mo:
                     file_id = mo.group(1)
                     tf = float(mo.group(2))
-                    if not file_id in accum:
-                        accum[file_id] = 0
+                    if not file_id in tf_idf_accum:
+                        tf_idf_accum[file_id] = 0
                     if parameters.log_tf:
                         tf = (1 + math.log(tf))
-                    accum[file_id] += (tf * idf)
+                    tf_idf_accum[file_id] += (tf * idf)
             f.close()
     top_words = {}
 
@@ -62,16 +63,16 @@ def do_query(query_words):
     for l in lengths:
         mo = re.match(r'([0-9]+)\:([0-9\.]+)\:(.+)\:(.+)', l)
         if mo:
-            document_id = mo.group(1)
+            doc_id = mo.group(1)
             length = eval(mo.group(2))
             title = mo.group(3)
             top_words[title] = mo.group(4).split(',')
-            if document_id in accum:
+            if doc_id in tf_idf_accum:
                 if parameters.normalization:
-                    accum[document_id] = accum[document_id] / length
-                titles[document_id] = title
+                    tf_idf_accum[doc_id] = tf_idf_accum[doc_id] / length
+                titles[doc_id] = title
 
-    return accum, titles, top_words
+    return tf_idf_accum, titles, top_words
 
 
 # check parameter for collection name
@@ -99,7 +100,7 @@ query = query.strip()
 # filter out stop words from the user's query
 query_words = list(filter(lambda x: x not in stop_words, query.split(' ')))
 
-accum, titles, top_words = do_query(query_words)
+accum, titles, top_words = do_query(collection, query_words)
 
 results = sorted(accum, key=accum.__getitem__, reverse=True)
 
@@ -117,7 +118,7 @@ if parameters.blind_relevance_feedback:
     for document in documents:
         word_set.update(top_words.get(document, []))
 
-    accum, titles, top_words = do_query(list(word_set))
+    accum, titles, top_words = do_query(collection, list(word_set))
 
     results = sorted(accum, key=accum.__getitem__, reverse=True)
 
