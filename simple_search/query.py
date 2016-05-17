@@ -81,6 +81,9 @@ if len(sys.argv) < 3:
 
 # construct collection and query
 collection = sys.argv[1]
+if collection.endswith(os.path.sep):
+    collection = collection[:-1]
+
 query = ''
 arg_index = 2
 while arg_index < len(sys.argv):
