@@ -51,6 +51,8 @@ def index_collection(collection_dir):
                 if parameters.stemming:
                     word = p.stem(word, 0, len(word) - 1)
                 doc_length += 1
+                if word in parameters.stop_words:
+                    continue
                 if not word in index:
                     index[word] = {key: 1}
                 else:

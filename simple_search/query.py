@@ -6,7 +6,6 @@ import re
 import math
 import sys
 import os
-import copy
 
 import porter
 
