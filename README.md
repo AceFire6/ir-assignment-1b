@@ -7,7 +7,7 @@
 ### Instructions
 
 1. Run `python simple_search/index.py <collection>` to index the
-documents in `<collection>`
+documents in `<collection>` (NOTE: you can index the entire testbed by specifying the `testbed` directory as `collection`)
 2. Run `python simple_search/query.py <collection> <query>` to query an
 indexed collection
 
