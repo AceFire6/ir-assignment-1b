@@ -31,7 +31,7 @@ for document in documents:
     identifier = document.split('.')[1]
     titles[identifier] = document
 
-    with open(path_to_doc, 'r') as doc_file:
+    with open(path_to_doc, 'r', errors='ignore') as doc_file:
         content = ' '.join(doc_file.readlines())
 
     doc_data[identifier] = (content.lower()
