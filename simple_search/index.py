@@ -10,11 +10,12 @@ import math
 import porter
 
 import parameters
+from parameters import print_debug
 
 
 def index_collection(collection_dir):
     documents = list(filter(lambda x: 'document.' in x, os.listdir(collection_dir)))
-
+    print_debug('Documents in directory: %d' % len(documents))
     doc_data = {}
     titles = {}
 
@@ -34,6 +35,7 @@ def index_collection(collection_dir):
 
     # document length/title file
     g = open("%s_index_len" % collection_dir, "w")
+    print_debug('Writing %s' % g.name)
 
     # create inverted files in memory and save titles/N to file
     index = {}
@@ -77,7 +79,10 @@ def index_collection(collection_dir):
     try:
         os.mkdir(inverted_file_dir)
     except:
-        print('Failed to make %s_index directory' % collection_dir)
+        reason = 'for unknown reasons'
+        if os.path.exists(inverted_file_dir):
+            reason = 'because it already exists'
+        print_debug('Did not make %s directory %s' % (inverted_file_dir, reason))
     for key in index:
         f = open(os.path.join(inverted_file_dir, key), "w")
         for entry in index[key]:
@@ -96,14 +101,20 @@ if len(sys.argv) == 1:
     exit(0)
 collection = sys.argv[1]
 
+if collection.endswith(os.path.sep):
+    collection = collection[:-1]
+
 if not os.path.isdir(collection):
     print('<collection> must be a folder')
     exit(0)
 
 if collection.endswith('testbeds'):
+    print_debug('Indexing whole testbed')
     collections = list(filter(lambda x: re.match(r'^testbed[0-9]+$', x),
                               os.listdir(collection)))
     for c_dir in collections:
+        print_debug('\nIndexing directory: %s' % os.path.join(collection, c_dir))
         index_collection(os.path.join(collection, c_dir))
 else:
+    print_debug('Indexing %s' % collection)
     index_collection(collection)
