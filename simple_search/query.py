@@ -10,7 +10,7 @@ import os
 import porter
 
 import parameters
-from parameters import stop_words
+from parameters import print_debug, stop_words
 
 
 def do_query(collection_dir, terms):
@@ -100,6 +100,8 @@ query = query.strip()
 # filter out stop words from the user's query
 query_words = list(filter(lambda x: x not in stop_words, query.split(' ')))
 
+print_debug('Query terms: {0}'.format(query_words))
+
 accum, titles, top_words = do_query(collection, query_words)
 
 results = sorted(accum, key=accum.__getitem__, reverse=True)
@@ -108,21 +110,34 @@ results = sorted(accum, key=accum.__getitem__, reverse=True)
 # Takes the top N results and gets the top N highest rated terms from each
 # Expands the query to include these new terms and searches again
 if parameters.blind_relevance_feedback:
+    print_debug('Running blind relevance feedback')
     num_docs = min(len(results), parameters.top_doc_count)
+    print_debug('Using top %d results' % num_docs)
     results = results[:num_docs]
 
     documents = [titles[results[i]] for i in range(num_docs)]
+    print_debug('Top {0} docs: {1}'.format(num_docs, documents))
 
-    word_set = set(query_words)
-    # Get top terms from each document and add them to a new query
-    for document in documents:
-        word_set.update(top_words.get(document, []))
+    print_debug('Using top %d terms' % parameters.top_term_count)
 
+    if parameters.unique_query_elements:
+        print_debug('Unique query terms only')
+        word_set = set(query_words)
+        # Get top terms from each document and add them to a new query
+        for document in documents:
+            word_set.update(top_words.get(document, []))
+    else:
+        word_set = query_words
+        for document in documents:
+            word_set.extend(top_words.get(document, []))
+
+    print_debug('Expanded query terms: {0}'.format(word_set))
     accum, titles, top_words = do_query(collection, list(word_set))
 
     results = sorted(accum, key=accum.__getitem__, reverse=True)
 
 # print top results
+print('Results:')
 for i in range(min(len(results), parameters.num_results)):
     print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                        titles[results[i]]))
