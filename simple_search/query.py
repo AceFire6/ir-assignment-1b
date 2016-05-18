@@ -75,6 +75,25 @@ def do_query(collection_dir, terms):
     return tf_idf_accum, titles, top_words
 
 
+def calculate_dcg(results, collection):
+    results = [int(k) for k in results]
+    dcg = {'1': [], '2': [], '3': [], '4': [], '5': []}
+    num_docs = min(len(results), parameters.num_results)
+    for query_num in dcg:
+        dcg_current = 0
+        with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
+            relevance_vals = [int(line) for line in fin.readlines()]
+            for i in range(num_docs):
+                dcg_current += relevance_vals[results[i]] / (i + 2)
+                dcg[query_num].append(dcg_current)
+
+    for query_num in ['1', '2', '3', '4', '5']:
+        print('DCG for query.%s' % query_num)
+        for i in range(len(dcg[query_num])):
+            print('{0:7.6f} {1}'.format(dcg[query_num][i], results[i]))
+        print()
+
+
 # check parameter for collection name
 if len(sys.argv) < 3:
     print("Syntax: index.py <collection> <query>")
@@ -105,6 +124,12 @@ print_debug('Query terms: {0}'.format(query_words))
 accum, titles, top_words = do_query(collection, query_words)
 
 results = sorted(accum, key=accum.__getitem__, reverse=True)
+print_debug('Initial Results: {0}'.format(results))
+
+# calculate initial DCG
+if parameters.show_DCG:
+    print_debug('\nInitial DCG values:')
+    calculate_dcg(results, collection)
 
 # Does the blind relevance feedback
 # Takes the top N results and gets the top N highest rated terms from each
@@ -141,3 +166,8 @@ print('Results:')
 for i in range(min(len(results), parameters.num_results)):
     print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                        titles[results[i]]))
+
+# calculate final DCG
+if parameters.show_DCG:
+    print_debug('\nFinal DCG values:')
+    calculate_dcg(results, collection)
