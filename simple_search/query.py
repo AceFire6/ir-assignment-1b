@@ -181,6 +181,10 @@ accum, titles, top_words = do_query(collection, query_words)
 results = sorted(accum, key=accum.__getitem__, reverse=True)
 print_debug('Initial Results: {0}'.format(results))
 
+if len(results) == 0:
+    print('No results')
+    exit()
+
 # calculate initial DCG
 if parameters.show_NDCG:
     print_debug('\nCalculating initial NDCG values:')
