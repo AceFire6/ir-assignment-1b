@@ -75,24 +75,43 @@ def do_query(collection_dir, terms):
     return tf_idf_accum, titles, top_words
 
 
-def calculate_dcg(results, collection):
-    results = [int(k) for k in results]
-    dcg = {'1': [], '2': [], '3': [], '4': [], '5': []}
+def calculate_ndcg(results, collection):
     num_docs = min(len(results), parameters.num_results)
+    results = [int(k) for k in results[:num_docs]]
+    dcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    idcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
     for query_num in dcg:
         dcg_current = 0
         with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
             relevance_vals = [int(line) for line in fin.readlines()]
             for i in range(num_docs):
-                dcg_current += relevance_vals[results[i]] / (i + 2)
-                dcg[query_num].append(dcg_current)
+                relevance[query_num][results[i]] = (relevance_vals[results[i] - 1])
+                dcg_current += relevance_vals[results[i] - 1] / math.log(i + 2)
+                dcg[query_num][results[i]] = dcg_current
 
-    for query_num in ['1', '2', '3', '4', '5']:
-        print('DCG for query.%s' % query_num)
-        for i in range(len(dcg[query_num])):
-            print('{0:7.6f} {1}'.format(dcg[query_num][i], results[i]))
-        print()
+    if parameters.show_DCG:
+        for query_num in ['1', '2', '3', '4', '5']:
+            print('DCG for query.%s' % query_num)
+            for doc, dcg_val in dcg[query_num].items():
+                print('{0:<4} {1:7.6f}'.format(doc, dcg_val))
+            print()
 
+    # create the idcg list
+    for query_num in dcg:
+        ordered_keys = sorted(relevance[query_num],
+                              key=relevance[query_num].get, reverse=True)
+        idcg_current = 0
+        for j in range(num_docs):
+            idcg_current += relevance[query_num][ordered_keys[j]] / math.log(j + 2)
+            idcg[query_num][ordered_keys[j]] = idcg_current
+
+    if parameters.show_IDCG:
+        for query_num in ['1', '2', '3', '4', '5']:
+            print('IDCG for query.%s' % query_num)
+            for doc, idcg_val in idcg[query_num].items():
+                print('{0:<4} {1:7.6f}'.format(doc, idcg_val))
+            print()
 
 # check parameter for collection name
 if len(sys.argv) < 3:
@@ -127,9 +146,9 @@ results = sorted(accum, key=accum.__getitem__, reverse=True)
 print_debug('Initial Results: {0}'.format(results))
 
 # calculate initial DCG
-if parameters.show_DCG:
-    print_debug('\nInitial DCG values:')
-    calculate_dcg(results, collection)
+if parameters.show_NDCG:
+    print_debug('\nCalculating initial NDCG values:')
+    calculate_ndcg(results, collection)
 
 # Does the blind relevance feedback
 # Takes the top N results and gets the top N highest rated terms from each
@@ -168,6 +187,6 @@ for i in range(min(len(results), parameters.num_results)):
                                        titles[results[i]]))
 
 # calculate final DCG
-if parameters.show_DCG:
-    print_debug('\nFinal DCG values:')
-    calculate_dcg(results, collection)
+if parameters.show_NDCG:
+    print_debug('\nCalculating final NDCG values:')
+    calculate_ndcg(results, collection)

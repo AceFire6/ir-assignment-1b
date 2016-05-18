@@ -21,6 +21,8 @@ top_doc_count = 5
 top_term_count = 5
 unique_query_elements = False
 show_DCG = True
+show_IDCG = True
+show_NDCG = True
 
 stop_words = ['a', 'about', 'abov', 'after', 'again', 'against', 'all', 'am',
               'an', 'and', 'ani', 'ar', "aren't", 'as', 'at', 'be', 'becaus',
