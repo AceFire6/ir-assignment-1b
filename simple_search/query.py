@@ -81,6 +81,8 @@ def calculate_ndcg(results, collection):
     dcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
     idcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
     relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+
+    # calculates the dcg for each document
     for query_num in dcg:
         dcg_current = 0
         with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
@@ -112,6 +114,16 @@ def calculate_ndcg(results, collection):
             for doc, idcg_val in idcg[query_num].items():
                 print('{0:<4} {1:7.6f}'.format(doc, idcg_val))
             print()
+
+    # Calculating the NDCG
+    for query_num in ['1', '2', '3', '4', '5']:
+        print('NDCG for query.%s' % query_num)
+        for doc in dcg[query_num]:
+            doc_ndcg = 0
+            if idcg[query_num][doc] != 0:
+                doc_ndcg = dcg[query_num][doc] / idcg[query_num][doc]
+            print('{0:<4} {1:7.6f}'.format(doc, doc_ndcg))
+        print()
 
 # check parameter for collection name
 if len(sys.argv) < 3:
