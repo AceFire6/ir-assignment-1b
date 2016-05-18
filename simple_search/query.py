@@ -75,22 +75,30 @@ def do_query(collection_dir, terms):
     return tf_idf_accum, titles, top_words
 
 
+def get_relevance_dict(results, collection):
+    results = list(map(int, results))
+    relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    for query_num in relevance:
+        with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
+            relevance_vals = [int(line) for line in fin.readlines()]
+            for i in range(len(results)):
+                relevance[query_num][results[i]] = (relevance_vals[results[i] - 1])
+    return relevance
+
+
 def calculate_ndcg(results, collection):
     num_docs = min(len(results), parameters.num_results)
-    results = [int(k) for k in results[:num_docs]]
+    results = list(map(int, results[:num_docs]))
     dcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
     idcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
-    relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    relevance = get_relevance_dict(results, collection)
 
     # calculates the dcg for each document
     for query_num in dcg:
         dcg_current = 0
-        with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
-            relevance_vals = [int(line) for line in fin.readlines()]
-            for i in range(num_docs):
-                relevance[query_num][results[i]] = (relevance_vals[results[i] - 1])
-                dcg_current += relevance_vals[results[i] - 1] / math.log(i + 2)
-                dcg[query_num][results[i]] = dcg_current
+        for i in range(num_docs):
+            dcg_current += relevance[query_num][results[i]] / math.log(i + 2)
+            dcg[query_num][results[i]] = dcg_current
 
     if parameters.show_DCG:
         for query_num in ['1', '2', '3', '4', '5']:
@@ -124,6 +132,22 @@ def calculate_ndcg(results, collection):
                 doc_ndcg = dcg[query_num][doc] / idcg[query_num][doc]
             print('{0:<4} {1:7.6f}'.format(doc, doc_ndcg))
         print()
+
+
+def calculate_MAP(results, collection):
+    relevance = get_relevance_dict(results, collection)
+    results = list(map(int, results))
+    MAP = {'1': [], '2': [], '3': [], '4': [], '5': []}
+    for query_num in ['1', '2', '3', '4', '5']:
+        relevant_docs = 0
+        total_docs = 0
+        for result in results:
+            total_docs += 1
+            if relevance[query_num][result] != 0:
+                relevant_docs += 1
+            MAP[query_num].append(relevant_docs / total_docs)
+        print('MAP for query.%s is: %f' % (query_num, sum(MAP[query_num]) / len(MAP[query_num])))
+
 
 # check parameter for collection name
 if len(sys.argv) < 3:
@@ -161,6 +185,10 @@ print_debug('Initial Results: {0}'.format(results))
 if parameters.show_NDCG:
     print_debug('\nCalculating initial NDCG values:')
     calculate_ndcg(results, collection)
+
+if parameters.show_MAP:
+    print_debug('\nCalculating initial MAP values:')
+    calculate_MAP(results, collection)
 
 # Does the blind relevance feedback
 # Takes the top N results and gets the top N highest rated terms from each
@@ -202,3 +230,7 @@ for i in range(min(len(results), parameters.num_results)):
 if parameters.show_NDCG:
     print_debug('\nCalculating final NDCG values:')
     calculate_ndcg(results, collection)
+
+if parameters.show_MAP:
+    print_debug('\nCalculating final MAP values:')
+    calculate_MAP(results, collection)
