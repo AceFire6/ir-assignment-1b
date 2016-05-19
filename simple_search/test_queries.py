@@ -3,7 +3,7 @@ import sys
 
 import parameters
 from parameters import print_debug
-from query import do_query, blind_relevance_feedback, calculate_MAP, calculate_ndcg
+from query import do_query, blind_relevance_feedback, calculate_AP, calculate_ndcg
 
 
 def analyze_results(results, collection, query, msg=''):
@@ -11,9 +11,9 @@ def analyze_results(results, collection, query, msg=''):
         print_debug('\nCalculating %s NDCG values:' % msg)
         calculate_ndcg(results, collection, query)
 
-    if parameters.show_MAP:
+    if parameters.show_AP:
         print_debug('\nCalculating %s MAP values:' % msg)
-        calculate_MAP(results, collection, query)
+        calculate_AP(results, collection, query)
 
 # check parameter for collection name
 if len(sys.argv) < 2:
@@ -32,19 +32,22 @@ for query_num in ['1', '2', '3', '4', '5']:
 
         accum, titles, top_words = do_query(collection, query_words)
         results = sorted(accum, key=accum.__getitem__, reverse=True)
+        num_results = min(len(results), parameters.num_results)
+        results = results[:num_results]
 
         # print top results
         print('Initial Results:')
-        for i in range(min(len(results), parameters.num_results)):
+        for i in range(num_results):
             print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                                titles[results[i]]))
 
         analyze_results(results, collection, query_num, 'initial')
 
         results, accum, titles = blind_relevance_feedback(query_words, results, titles, top_words, collection)
+        results = results[:num_results]
 
         print('Final Results:')
-        for i in range(min(len(results), parameters.num_results)):
+        for i in range(num_results):
             print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                                titles[results[i]]))
 

@@ -142,17 +142,17 @@ def calculate_ndcg(results, collection, query):
         print('NDCG for query.%s: %f' % (query, dcg / idcg))
 
 
-def calculate_MAP(results, collection, query):
+def calculate_AP(results, collection, query):
     relevance = get_relevance_dict(results, collection)[query]
     results = list(map(int, results))
     relevant_docs = 0
     total_docs = 0
-    MAP = 0
+    AP = 0
     for result in results:
         total_docs += 1
         relevant_docs += relevance[result]
-        MAP += relevant_docs / total_docs
-    print('MAP for query.%s is: %f' % (query, (relevant_docs / total_docs) / 2))
+        AP += relevant_docs / total_docs
+    print('AP for query.%s is: %f' % (query, (AP / len(results)) / 2))
 
 
 def main():

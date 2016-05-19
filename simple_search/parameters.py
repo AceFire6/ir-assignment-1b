@@ -23,7 +23,7 @@ unique_query_elements = False
 show_DCG = True
 show_IDCG = True
 show_NDCG = True
-show_MAP = True
+show_AP = True
 
 stop_words = ['a', 'about', 'abov', 'after', 'again', 'against', 'all', 'am',
               'an', 'and', 'ani', 'ar', "aren't", 'as', 'at', 'be', 'becaus',
