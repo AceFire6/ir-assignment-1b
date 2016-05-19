@@ -13,7 +13,7 @@ def analyze_results(results, collection, query, msg=''):
 
     if parameters.show_AP:
         print_debug('\nCalculating %s MAP values:' % msg)
-        calculate_AP(results, collection, query)
+        return calculate_AP(results, collection, query)
 
 # check parameter for collection name
 if len(sys.argv) < 2:
@@ -24,6 +24,9 @@ if len(sys.argv) < 2:
 collection = sys.argv[1]
 if collection.endswith(os.path.sep):
     collection = collection[:-1]
+
+init_map = 0
+final_map = 0
 
 for query_num in ['1', '2', '3', '4', '5']:
     with open(os.path.join(collection, 'query.%s' % query_num)) as fin:
@@ -41,7 +44,7 @@ for query_num in ['1', '2', '3', '4', '5']:
             print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                                titles[results[i]]))
 
-        analyze_results(results, collection, query_num, 'initial')
+        init_map += analyze_results(results, collection, query_num, 'initial')
 
         results, accum, titles = blind_relevance_feedback(query_words, results, titles, top_words, collection)
         results = results[:num_results]
@@ -51,8 +54,10 @@ for query_num in ['1', '2', '3', '4', '5']:
             print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
                                                titles[results[i]]))
 
-        analyze_results(results, collection, query_num, 'final')
+        final_map += analyze_results(results, collection, query_num, 'final')
 
         print('=' * 50, '\n')
 
+print('Initial MAP:', init_map / 5)
+print('Final MAP:', final_map / 5)
 
