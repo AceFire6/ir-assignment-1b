@@ -182,7 +182,7 @@ if parameters.show_MAP:
 # Takes the top N results and gets the top N highest rated terms from each
 # Expands the query to include these new terms and searches again
 if parameters.blind_relevance_feedback:
-    print_debug('Running blind relevance feedback')
+    print_debug('\nRunning blind relevance feedback')
     num_docs = min(len(results), parameters.top_doc_count)
     print_debug('Using top %d results' % num_docs)
     results = results[:num_docs]
