@@ -96,9 +96,8 @@ def calculate_ndcg(results, collection):
 
     # calculates the dcg for each document
     for query_num in query_nums:
-        dcg[query_num] = relevance[query_num][results[0]]
-        for i in range(1, num_docs):
-            dcg[query_num] += relevance[query_num][results[i]] / math.log(i + 1, 2)
+        for i in range(num_docs):
+            dcg[query_num] += relevance[query_num][results[i]] / math.log(i + 2, 2)
         print('DCG for query.%s: %f' % (query_num, dcg[query_num]))
     print()
 
@@ -106,9 +105,8 @@ def calculate_ndcg(results, collection):
     for query_num in query_nums:
         ordered_keys = sorted(relevance[query_num],
                               key=relevance[query_num].get, reverse=True)
-        idcg[query_num] = relevance[query_num][ordered_keys[0]]
-        for j in range(1, num_docs):
-            idcg[query_num] += relevance[query_num][ordered_keys[j]] / math.log(j + 1, 2)
+        for j in range(num_docs):
+            idcg[query_num] += relevance[query_num][ordered_keys[j]] / math.log(j + 2, 2)
         print('IDCG for query.%s: %f' % (query_num, idcg[query_num]))
     print()
 
