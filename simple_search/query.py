@@ -90,37 +90,32 @@ def calculate_ndcg(results, collection):
     query_nums = ['1', '2', '3', '4', '5']
     num_docs = min(len(results), parameters.num_results)
     results = list(map(int, results[:num_docs]))
-    dcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
-    idcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    dcg = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+    idcg = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
     relevance = get_relevance_dict(results, collection)
 
     # calculates the dcg for each document
     for query_num in query_nums:
-        dcg_current = 0
-        for i in range(num_docs):
-            dcg_current += relevance[query_num][results[i]] / math.log(i + 2)
-            dcg[query_num][results[i]] = dcg_current
-        print('DCG for query.%s: %f' % (query_num, dcg_current))
+        dcg[query_num] = relevance[query_num][results[0]]
+        for i in range(1, num_docs):
+            dcg[query_num] += relevance[query_num][results[i]] / math.log(i + 1, 2)
+        print('DCG for query.%s: %f' % (query_num, dcg[query_num]))
     print()
 
     # create the idcg list
     for query_num in query_nums:
         ordered_keys = sorted(relevance[query_num],
                               key=relevance[query_num].get, reverse=True)
-        idcg_current = 0
-        for j in range(num_docs):
-            idcg_current += relevance[query_num][ordered_keys[j]] / math.log(j + 2)
-            idcg[query_num][ordered_keys[j]] = idcg_current
-        print('IDCG for query.%s: %f' % (query_num, idcg_current))
+        idcg[query_num] = relevance[query_num][ordered_keys[0]]
+        for j in range(1, num_docs):
+            idcg[query_num] += relevance[query_num][ordered_keys[j]] / math.log(j + 1, 2)
+        print('IDCG for query.%s: %f' % (query_num, idcg[query_num]))
     print()
 
     # Calculating the NDCG
     for query_num in query_nums:
-        ndcg_val = 0
-        for doc in dcg[query_num]:
-            if idcg[query_num][doc] != 0:
-                ndcg_val += dcg[query_num][doc] / idcg[query_num][doc]
-        print('NDCG for query.%s: %f' % (query_num, ndcg_val))
+        if idcg[query_num] != 0:
+            print('NDCG for query.%s: %f' % (query_num, dcg[query_num] / idcg[query_num]))
 
 
 def calculate_MAP(results, collection):
