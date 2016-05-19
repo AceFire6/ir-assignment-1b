@@ -150,10 +150,11 @@ def calculate_AP(results, collection, query):
     AP = 0
     for result in results:
         total_docs += 1
-        relevant_docs += relevance[result]
+        if relevance[result] != 0:
+            relevant_docs += 1
         AP += relevant_docs / total_docs
-    print('AP for query.%s is: %f' % (query, (AP / len(results)) / 2))
-    return (AP / len(results)) / 2
+    print('AP for query.%s is: %f' % (query, AP / len(results)))
+    return AP / len(results)
 
 
 def main():
