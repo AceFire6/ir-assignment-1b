@@ -87,6 +87,7 @@ def get_relevance_dict(results, collection):
 
 
 def calculate_ndcg(results, collection):
+    query_nums = ['1', '2', '3', '4', '5']
     num_docs = min(len(results), parameters.num_results)
     results = list(map(int, results[:num_docs]))
     dcg = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
@@ -94,7 +95,7 @@ def calculate_ndcg(results, collection):
     relevance = get_relevance_dict(results, collection)
 
     # calculates the dcg for each document
-    for query_num in dcg:
+    for query_num in query_nums:
         dcg_current = 0
         for i in range(num_docs):
             dcg_current += relevance[query_num][results[i]] / math.log(i + 2)
@@ -103,7 +104,7 @@ def calculate_ndcg(results, collection):
     print()
 
     # create the idcg list
-    for query_num in dcg:
+    for query_num in query_nums:
         ordered_keys = sorted(relevance[query_num],
                               key=relevance[query_num].get, reverse=True)
         idcg_current = 0
@@ -114,7 +115,7 @@ def calculate_ndcg(results, collection):
     print()
 
     # Calculating the NDCG
-    for query_num in ['1', '2', '3', '4', '5']:
+    for query_num in query_nums:
         ndcg_val = 0
         for doc in dcg[query_num]:
             if idcg[query_num][doc] != 0:
