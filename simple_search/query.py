@@ -75,111 +75,11 @@ def do_query(collection_dir, terms):
     return tf_idf_accum, titles, top_words
 
 
-def get_relevance_dict(results, collection):
-    results = list(map(int, results))
-    relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
-    for query_num in relevance:
-        with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
-            relevance_vals = [int(line) for line in fin.readlines()]
-            for i in range(len(results)):
-                relevance[query_num][results[i]] = (relevance_vals[results[i] - 1])
-    return relevance
+def blind_relevance_feedback(query_words, results, titles, top_words, collection):
+    # Does the blind relevance feedback
+    # Takes the top N results and gets the top N highest rated terms from each
+    # Expands the query to include these new terms and searches again
 
-
-def calculate_ndcg(results, collection):
-    query_nums = ['1', '2', '3', '4', '5']
-    num_docs = min(len(results), parameters.num_results)
-    results = list(map(int, results[:num_docs]))
-    dcg = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-    idcg = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-    relevance = get_relevance_dict(results, collection)
-
-    # calculates the dcg for each document
-    for query_num in query_nums:
-        for i in range(num_docs):
-            dcg[query_num] += relevance[query_num][results[i]] / math.log(i + 2, 2)
-        print('DCG for query.%s: %f' % (query_num, dcg[query_num]))
-    print()
-
-    # create the idcg list
-    for query_num in query_nums:
-        ordered_keys = sorted(relevance[query_num],
-                              key=relevance[query_num].get, reverse=True)
-        for j in range(num_docs):
-            idcg[query_num] += relevance[query_num][ordered_keys[j]] / math.log(j + 2, 2)
-        print('IDCG for query.%s: %f' % (query_num, idcg[query_num]))
-    print()
-
-    # Calculating the NDCG
-    for query_num in query_nums:
-        if idcg[query_num] != 0:
-            print('NDCG for query.%s: %f' % (query_num, dcg[query_num] / idcg[query_num]))
-
-
-def calculate_MAP(results, collection):
-    relevance = get_relevance_dict(results, collection)
-    results = list(map(int, results))
-    MAP = {'1': [], '2': [], '3': [], '4': [], '5': []}
-    for query_num in ['1', '2', '3', '4', '5']:
-        relevant_docs = 0
-        total_docs = 0
-        for result in results:
-            total_docs += 1
-            if relevance[query_num][result] != 0:
-                relevant_docs += 1
-            MAP[query_num].append(relevant_docs / total_docs)
-        print('MAP for query.%s is: %f' % (query_num, sum(MAP[query_num]) / len(MAP[query_num])))
-
-
-# check parameter for collection name
-if len(sys.argv) < 3:
-    print("Syntax: index.py <collection> <query>")
-    exit(0)
-
-# construct collection and query
-collection = sys.argv[1]
-if collection.endswith(os.path.sep):
-    collection = collection[:-1]
-
-query = ''
-arg_index = 2
-while arg_index < len(sys.argv):
-    query += sys.argv[arg_index] + ' '
-    arg_index += 1
-
-# clean query
-if parameters.case_folding:
-    query = query.lower()
-query = re.sub(r'[^ a-zA-Z0-9]', ' ', query)
-query = re.sub(r'\s+', ' ', query)
-query = query.strip()
-# filter out stop words from the user's query
-query_words = list(filter(lambda x: x not in stop_words, query.split(' ')))
-
-print_debug('Query terms: {0}'.format(query_words))
-
-accum, titles, top_words = do_query(collection, query_words)
-
-results = sorted(accum, key=accum.__getitem__, reverse=True)
-print_debug('Initial Results: {0}'.format(results))
-
-if len(results) == 0:
-    print('No results')
-    exit()
-
-# calculate initial DCG
-if parameters.show_NDCG:
-    print_debug('\nCalculating initial NDCG values:')
-    calculate_ndcg(results, collection)
-
-if parameters.show_MAP:
-    print_debug('\nCalculating initial MAP values:')
-    calculate_MAP(results, collection)
-
-# Does the blind relevance feedback
-# Takes the top N results and gets the top N highest rated terms from each
-# Expands the query to include these new terms and searches again
-if parameters.blind_relevance_feedback:
     print_debug('\nRunning blind relevance feedback')
     num_docs = min(len(results), parameters.top_doc_count)
     print_debug('Using top %d results' % num_docs)
@@ -205,18 +105,96 @@ if parameters.blind_relevance_feedback:
     accum, titles, top_words = do_query(collection, list(word_set))
 
     results = sorted(accum, key=accum.__getitem__, reverse=True)
+    return results, accum, titles
 
-# print top results
-print('Results:')
-for i in range(min(len(results), parameters.num_results)):
-    print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
-                                       titles[results[i]]))
 
-# calculate final DCG
-if parameters.show_NDCG:
-    print_debug('\nCalculating final NDCG values:')
-    calculate_ndcg(results, collection)
+def get_relevance_dict(results, collection):
+    results = list(map(int, results))
+    relevance = {'1': {}, '2': {}, '3': {}, '4': {}, '5': {}}
+    for query_num in relevance:
+        with open(os.path.join(collection, 'relevance.%s' % query_num)) as fin:
+            relevance_vals = [int(line) for line in fin.readlines()]
+            for i in range(len(results)):
+                relevance[query_num][results[i]] = (relevance_vals[results[i] - 1])
+    return relevance
 
-if parameters.show_MAP:
-    print_debug('\nCalculating final MAP values:')
-    calculate_MAP(results, collection)
+
+def calculate_ndcg(results, collection, query):
+    num_docs = min(len(results), parameters.num_results)
+    results = list(map(int, results[:num_docs]))
+    dcg = 0
+    idcg = 0
+    relevance = get_relevance_dict(results, collection)[query]
+
+    # calculates the dcg for each document
+    for i in range(num_docs):
+        dcg += relevance[results[i]] / math.log(i + 2, 2)
+    print('DCG for query.%s: %f' % (query, dcg))
+
+    # create the idcg list
+    ordered_keys = sorted(relevance, key=relevance.get, reverse=True)
+    for j in range(num_docs):
+        idcg += relevance[ordered_keys[j]] / math.log(j + 2, 2)
+    print('IDCG for query.%s: %f' % (query, idcg))
+
+    # Calculating the NDCG
+    if idcg != 0:
+        print('NDCG for query.%s: %f' % (query, dcg / idcg))
+
+
+def calculate_MAP(results, collection, query):
+    relevance = get_relevance_dict(results, collection)[query]
+    results = list(map(int, results))
+    relevant_docs = 0
+    total_docs = 0
+    MAP = 0
+    for result in results:
+        total_docs += 1
+        relevant_docs += relevance[result]
+        MAP += relevant_docs / total_docs
+    print('MAP for query.%s is: %f' % (query, (relevant_docs / total_docs) / 2))
+
+
+def main():
+    # check parameter for collection name
+    if len(sys.argv) < 3:
+        print("Syntax: index.py <collection> <query>")
+        exit(0)
+
+    # construct collection and query
+    collection = sys.argv[1]
+    if collection.endswith(os.path.sep):
+        collection = collection[:-1]
+
+    query = ''
+    arg_index = 2
+    while arg_index < len(sys.argv):
+        query += sys.argv[arg_index] + ' '
+        arg_index += 1
+
+    # clean query
+    if parameters.case_folding:
+        query = query.lower()
+    query = re.sub(r'[^ a-zA-Z0-9]', ' ', query)
+    query = re.sub(r'\s+', ' ', query)
+    query = query.strip()
+    # filter out stop words from the user's query
+    query_words = list(filter(lambda x: x not in stop_words, query.split(' ')))
+
+    print_debug('Query terms: {0}'.format(query_words))
+
+    accum, titles, top_words = do_query(collection, query_words)
+
+    results = sorted(accum, key=accum.__getitem__, reverse=True)
+    print_debug('Initial Results:')
+    # print top results
+    for i in range(min(len(results), parameters.num_results)):
+        print("{0:10.8f} {1:5} {2}".format(accum[results[i]], results[i],
+                                           titles[results[i]]))
+
+    if len(results) == 0:
+        print('No results')
+        exit()
+
+if __name__ == '__main__':
+    main()
