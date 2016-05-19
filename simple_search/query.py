@@ -99,13 +99,8 @@ def calculate_ndcg(results, collection):
         for i in range(num_docs):
             dcg_current += relevance[query_num][results[i]] / math.log(i + 2)
             dcg[query_num][results[i]] = dcg_current
-
-    if parameters.show_DCG:
-        for query_num in ['1', '2', '3', '4', '5']:
-            print('DCG for query.%s' % query_num)
-            for doc, dcg_val in dcg[query_num].items():
-                print('{0:<4} {1:7.6f}'.format(doc, dcg_val))
-            print()
+        print('DCG for query.%s: %f' % (query_num, dcg_current))
+    print()
 
     # create the idcg list
     for query_num in dcg:
@@ -115,23 +110,16 @@ def calculate_ndcg(results, collection):
         for j in range(num_docs):
             idcg_current += relevance[query_num][ordered_keys[j]] / math.log(j + 2)
             idcg[query_num][ordered_keys[j]] = idcg_current
-
-    if parameters.show_IDCG:
-        for query_num in ['1', '2', '3', '4', '5']:
-            print('IDCG for query.%s' % query_num)
-            for doc, idcg_val in idcg[query_num].items():
-                print('{0:<4} {1:7.6f}'.format(doc, idcg_val))
-            print()
+        print('IDCG for query.%s: %f' % (query_num, idcg_current))
+    print()
 
     # Calculating the NDCG
     for query_num in ['1', '2', '3', '4', '5']:
-        print('NDCG for query.%s' % query_num)
+        ndcg_val = 0
         for doc in dcg[query_num]:
-            doc_ndcg = 0
             if idcg[query_num][doc] != 0:
-                doc_ndcg = dcg[query_num][doc] / idcg[query_num][doc]
-            print('{0:<4} {1:7.6f}'.format(doc, doc_ndcg))
-        print()
+                ndcg_val += dcg[query_num][doc] / idcg[query_num][doc]
+        print('NDCG for query.%s: %f' % (query_num, ndcg_val))
 
 
 def calculate_MAP(results, collection):
